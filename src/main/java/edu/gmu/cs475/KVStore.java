@@ -13,7 +13,6 @@ import org.apache.zookeeper.CreateMode;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class KVStore extends AbstractKVStore {
 	ConcurrentHashMap<String,ConcurrentHashMap<Integer,PersistentNode>> memberships;
@@ -67,8 +66,8 @@ public class KVStore extends AbstractKVStore {
 			}
 		});
 		// if the host name is empty
-		//if(memberships.get(localClientHostname) == null){
-			//memberships.put(localClientHostname, new ConcurrentHashMap<Integer,PersistentNode>());
+		if(memberships.get(localClientHostname) == null){
+			memberships.put(localClientHostname, new ConcurrentHashMap<Integer,PersistentNode>());
 			// set up a tree to watch this path only if it does not exist yet
 			// so it only initialize the tree once
 			// is it correct that we are making a treecache at specific path? Or just the general
@@ -111,8 +110,8 @@ public class KVStore extends AbstractKVStore {
 			};
 			members.getListenable().addListener(instanceListener);
 			
-		//}
-		//memberships.get(localClientHostname).put(localClientPort, znode);
+		}
+		memberships.get(localClientHostname).put(localClientPort, znode);
 		try {
 			members.start();
 			applier.start();
