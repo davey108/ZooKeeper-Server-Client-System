@@ -1,0 +1,32 @@
+Manifest-Version: 1.0
+Implementation-Title: kvstore
+Implementation-Version: 0.0.1-SNAPSHOT
+Built-By: David1234
+Implementation-Vendor-Id: edu.gmu.cs475
+Class-Path: spring-shell-starter-2.0.1.BUILD-20180314.223503-4.jar spr
+ ing-shell-core-2.0.1.BUILD-20180314.223503-4.jar spring-boot-starter-
+ 1.5.10.RELEASE.jar spring-boot-1.5.10.RELEASE.jar spring-context-4.3.
+ 14.RELEASE.jar spring-aop-4.3.14.RELEASE.jar spring-expression-4.3.14
+ .RELEASE.jar spring-boot-autoconfigure-1.5.10.RELEASE.jar spring-boot
+ -starter-logging-1.5.10.RELEASE.jar logback-classic-1.1.11.jar logbac
+ k-core-1.1.11.jar jcl-over-slf4j-1.7.25.jar jul-to-slf4j-1.7.25.jar l
+ og4j-over-slf4j-1.7.25.jar spring-core-4.3.14.RELEASE.jar snakeyaml-1
+ .17.jar spring-boot-starter-validation-1.5.10.RELEASE.jar tomcat-embe
+ d-el-8.5.27.jar hibernate-validator-5.3.6.Final.jar validation-api-1.
+ 1.0.Final.jar jboss-logging-3.3.1.Final.jar classmate-1.3.4.jar jline
+ -3.4.0.jar jline-terminal-jna-3.4.0.jar jna-4.2.2.jar jline-terminal-
+ 3.4.0.jar spring-shell-standard-2.0.1.BUILD-20180314.223503-4.jar spr
+ ing-shell-standard-commands-2.0.1.BUILD-20180314.223503-4.jar spring-
+ shell-shell1-adapter-2.0.1.BUILD-20180314.223503-4.jar spring-shell-j
+ commander-adapter-2.0.1.BUILD-20180314.223503-4.jar spring-shell-tabl
+ e-2.0.1.BUILD-20180314.223503-4.jar spring-beans-4.3.14.RELEASE.jar n
+ etcrusher-core-0.10.jar slf4j-api-1.7.25.jar curator-test-4.0.1.jar z
+ ookeeper-3.5.3-beta.jar commons-cli-1.2.jar log4j-1.2.17.jar netty-3.
+ 10.5.Final.jar guava-20.0.jar curator-recipes-4.0.1.jar curator-frame
+ work-4.0.1.jar curator-client-4.0.1.jar
+Build-Jdk: 1.8.0_172
+Implementation-URL: http://projects.spring.io/spring-boot/kvstore/
+Created-By: Maven Integration for Eclipse
+Implementation-Vendor: Pivotal Software, Inc.
+Main-Class: edu.gmu.cs475.internal.Main
+

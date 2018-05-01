@@ -1,0 +1,44 @@
+-------------------------------------------------------------------------------
+Test set: edu.gmu.cs475.test.P2ReplicationTests
+-------------------------------------------------------------------------------
+Tests run: 10, Failures: 10, Errors: 0, Skipped: 0, Time elapsed: 158.584 sec <<< FAILURE! - in edu.gmu.cs475.test.P2ReplicationTests
+testReadWhileWritingDifferentKeysIsOK(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 16.044 sec  <<< FAILURE!
+java.lang.AssertionError: Expected setValue called with testReadWhileWritingDifferentKeysIsOK-key-1,testReadWhileWritingDifferentKeysIsOK-value-1,localhost:63400, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testReadWhileWritingDifferentKeysIsOK(P2ReplicationTests.java:483)
+
+testWriteReadOneKVServer(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 5.065 sec  <<< FAILURE!
+java.lang.AssertionError: expected:<testWriteReadOneKVServer-value-1> but was:<null>
+	at edu.gmu.cs475.test.P2ReplicationTests.testWriteReadOneKVServer(P2ReplicationTests.java:35)
+
+testMutualExclusionWritingSameKey(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 15.225 sec  <<< FAILURE!
+java.lang.AssertionError: Expected setValue called with testMutualExclusionWritingSameKey-key-1,testMutualExclusionWritingSameKey-value-1,localhost:63431, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testMutualExclusionWritingSameKey(P2ReplicationTests.java:329)
+
+testConcurrentServerReadsOK(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 15.334 sec  <<< FAILURE!
+java.lang.AssertionError: Expected setValue called with testConcurrentServerReadsOK-key-1,testConcurrentServerReadsOK-value-1,localhost:63459, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testConcurrentServerReadsOK(P2ReplicationTests.java:539)
+
+testInvalidateIsOnlySentToRelevantClients(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 20.354 sec  <<< FAILURE!
+java.lang.AssertionError: Expected (6-7) getValue calls on client Leader (C1) [#0, localhost:63476], got[]
+	at edu.gmu.cs475.test.P2ReplicationTests.testInvalidateIsOnlySentToRelevantClients(P2ReplicationTests.java:185)
+
+testReadAndWriteBothCache(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 20.243 sec  <<< FAILURE!
+java.lang.AssertionError: Expected (6-7) getValue calls on client Leader (C1) [#0, localhost:63515], got[]
+	at edu.gmu.cs475.test.P2ReplicationTests.testReadAndWriteBothCache(P2ReplicationTests.java:106)
+
+testWriteInvalidatesCache(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 20.371 sec  <<< FAILURE!
+java.lang.AssertionError: Expected (6-7) getValue calls on client Leader (C1) [#0, localhost:63547], got[]
+	at edu.gmu.cs475.test.P2ReplicationTests.testWriteInvalidatesCache(P2ReplicationTests.java:148)
+
+testReadWhileWritingWaits(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 15.456 sec  <<< FAILURE!
+java.lang.AssertionError: Expected setValue called with testReadWhileWritingWaits-key-1,testReadWhileWritingWaits-value-1,localhost:63602, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testReadWhileWritingWaits(P2ReplicationTests.java:409)
+
+testCanWriteDifferentKeysAtOnce(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 15.212 sec  <<< FAILURE!
+java.lang.AssertionError: Expected setValue called with testCanWriteDifferentKeysAtOnce-key-1,testCanWriteDifferentKeysAtOnce-value-1,localhost:63638, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testCanWriteDifferentKeysAtOnce(P2ReplicationTests.java:239)
+
+testWriteOneClientReadAnother(edu.gmu.cs475.test.P2ReplicationTests)  Time elapsed: 15.214 sec  <<< FAILURE!
+java.lang.AssertionError: expected:<testWriteOneClientReadAnother-value-1> but was:<null>
+	at edu.gmu.cs475.test.P2ReplicationTests.testWriteOneClientReadAnother(P2ReplicationTests.java:72)
+

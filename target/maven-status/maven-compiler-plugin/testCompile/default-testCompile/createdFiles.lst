@@ -1,0 +1,4 @@
+edu/gmu/cs475/test/Base475Test.class
+edu/gmu/cs475/test/P3FaultToleranceTests.class
+edu/gmu/cs475/test/P2ReplicationTests.class
+edu/gmu/cs475/test/P1ZKTests.class

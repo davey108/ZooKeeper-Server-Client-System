@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" name="edu.gmu.cs475.test.P2ReplicationTests" time="158.584" tests="10" errors="0" skipped="0" failures="10">
+  <properties>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
+    <property name="sun.boot.library.path" value="/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib"/>
+    <property name="java.vm.version" value="25.101-b13"/>
+    <property name="gopherProxySet" value="false"/>
+    <property name="java.vm.vendor" value="Oracle Corporation"/>
+    <property name="maven.multiModuleProjectDirectory" value="/Users/jon/Dropbox/Teaching/CS 475/HW5/handout"/>
+    <property name="java.vendor.url" value="http://java.oracle.com/"/>
+    <property name="path.separator" value=":"/>
+    <property name="guice.disable.misplaced.annotation.check" value="true"/>
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM"/>
+    <property name="file.encoding.pkg" value="sun.io"/>
+    <property name="user.country" value="US"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.os.patch.level" value="unknown"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="user.dir" value="/Users/jon/Dropbox/Teaching/CS 475/HW5/handout"/>
+    <property name="java.runtime.version" value="1.8.0_101-b13"/>
+    <property name="java.awt.graphicsenv" value="sun.awt.CGraphicsEnvironment"/>
+    <property name="java.endorsed.dirs" value="/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/endorsed"/>
+    <property name="os.arch" value="x86_64"/>
+    <property name="java.io.tmpdir" value="/var/folders/gy/9h9f8y6d5h74hq_9cctxt9d40000gn/T/"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="os.name" value="Mac OS X"/>
+    <property name="classworlds.conf" value="/usr/local/Cellar/maven/3.5.2/libexec/bin/m2.conf"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/Users/jon/Library/Java/Extensions:/Library/Java/Extensions:/Network/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java:."/>
+    <property name="maven.conf" value="/usr/local/Cellar/maven/3.5.2/libexec/conf"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.class.version" value="52.0"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="os.version" value="10.13.4"/>
+    <property name="library.jansi.path" value="/usr/local/Cellar/maven/3.5.2/libexec/lib/jansi-native"/>
+    <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
+    <property name="user.home" value="/Users/jon"/>
+    <property name="user.timezone" value="America/New_York"/>
+    <property name="java.awt.printerjob" value="sun.lwawt.macosx.CPrinterJob"/>
+    <property name="java.specification.version" value="1.8"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="user.name" value="jon"/>
+    <property name="java.class.path" value="/usr/local/Cellar/maven/3.5.2/libexec/boot/plexus-classworlds-2.5.2.jar"/>
+    <property name="java.vm.specification.version" value="1.8"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.home" value="/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre"/>
+    <property name="sun.java.command" value="org.codehaus.plexus.classworlds.launcher.Launcher clean verify"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="user.language" value="en"/>
+    <property name="awt.toolkit" value="sun.lwawt.macosx.LWCToolkit"/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="java.version" value="1.8.0_101"/>
+    <property name="java.ext.dirs" value="/Users/jon/Library/Java/Extensions:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/ext:/Library/Java/Extensions:/Network/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java"/>
+    <property name="sun.boot.class.path" value="/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/resources.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/rt.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/sunrsasign.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/jsse.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/jce.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/charsets.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/lib/jfr.jar:/Library/Java/JavaVirtualMachines/jdk1.8.0_101.jdk/Contents/Home/jre/classes"/>
+    <property name="java.vendor" value="Oracle Corporation"/>
+    <property name="maven.home" value="/usr/local/Cellar/maven/3.5.2/libexec"/>
+    <property name="file.separator" value="/"/>
+    <property name="java.vendor.url.bug" value="http://bugreport.sun.com/bugreport/"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeBig"/>
+    <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
+    <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
+    <property name="sun.cpu.isalist" value=""/>
+  </properties>
+  <testcase name="testReadWhileWritingDifferentKeysIsOK" classname="edu.gmu.cs475.test.P2ReplicationTests" time="16.044">
+    <failure message="Expected setValue called with testReadWhileWritingDifferentKeysIsOK-key-1,testReadWhileWritingDifferentKeysIsOK-value-1,localhost:63400, but no call found" type="java.lang.AssertionError">java.lang.AssertionError: Expected setValue called with testReadWhileWritingDifferentKeysIsOK-key-1,testReadWhileWritingDifferentKeysIsOK-value-1,localhost:63400, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testReadWhileWritingDifferentKeysIsOK(P2ReplicationTests.java:483)
+</failure>
+  </testcase>
+  <testcase name="testWriteReadOneKVServer" classname="edu.gmu.cs475.test.P2ReplicationTests" time="5.065">
+    <failure message="expected:&lt;testWriteReadOneKVServer-value-1&gt; but was:&lt;null&gt;" type="java.lang.AssertionError"><![CDATA[java.lang.AssertionError: expected:<testWriteReadOneKVServer-value-1> but was:<null>
+	at edu.gmu.cs475.test.P2ReplicationTests.testWriteReadOneKVServer(P2ReplicationTests.java:35)
+]]></failure>
+  </testcase>
+  <testcase name="testMutualExclusionWritingSameKey" classname="edu.gmu.cs475.test.P2ReplicationTests" time="15.225">
+    <failure message="Expected setValue called with testMutualExclusionWritingSameKey-key-1,testMutualExclusionWritingSameKey-value-1,localhost:63431, but no call found" type="java.lang.AssertionError">java.lang.AssertionError: Expected setValue called with testMutualExclusionWritingSameKey-key-1,testMutualExclusionWritingSameKey-value-1,localhost:63431, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testMutualExclusionWritingSameKey(P2ReplicationTests.java:329)
+</failure>
+  </testcase>
+  <testcase name="testConcurrentServerReadsOK" classname="edu.gmu.cs475.test.P2ReplicationTests" time="15.334">
+    <failure message="Expected setValue called with testConcurrentServerReadsOK-key-1,testConcurrentServerReadsOK-value-1,localhost:63459, but no call found" type="java.lang.AssertionError">java.lang.AssertionError: Expected setValue called with testConcurrentServerReadsOK-key-1,testConcurrentServerReadsOK-value-1,localhost:63459, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testConcurrentServerReadsOK(P2ReplicationTests.java:539)
+</failure>
+  </testcase>
+  <testcase name="testInvalidateIsOnlySentToRelevantClients" classname="edu.gmu.cs475.test.P2ReplicationTests" time="20.354">
+    <failure message="Expected (6-7) getValue calls on client Leader (C1) [#0, localhost:63476], got[]" type="java.lang.AssertionError">java.lang.AssertionError: Expected (6-7) getValue calls on client Leader (C1) [#0, localhost:63476], got[]
+	at edu.gmu.cs475.test.P2ReplicationTests.testInvalidateIsOnlySentToRelevantClients(P2ReplicationTests.java:185)
+</failure>
+  </testcase>
+  <testcase name="testReadAndWriteBothCache" classname="edu.gmu.cs475.test.P2ReplicationTests" time="20.243">
+    <failure message="Expected (6-7) getValue calls on client Leader (C1) [#0, localhost:63515], got[]" type="java.lang.AssertionError">java.lang.AssertionError: Expected (6-7) getValue calls on client Leader (C1) [#0, localhost:63515], got[]
+	at edu.gmu.cs475.test.P2ReplicationTests.testReadAndWriteBothCache(P2ReplicationTests.java:106)
+</failure>
+  </testcase>
+  <testcase name="testWriteInvalidatesCache" classname="edu.gmu.cs475.test.P2ReplicationTests" time="20.371">
+    <failure message="Expected (6-7) getValue calls on client Leader (C1) [#0, localhost:63547], got[]" type="java.lang.AssertionError">java.lang.AssertionError: Expected (6-7) getValue calls on client Leader (C1) [#0, localhost:63547], got[]
+	at edu.gmu.cs475.test.P2ReplicationTests.testWriteInvalidatesCache(P2ReplicationTests.java:148)
+</failure>
+  </testcase>
+  <testcase name="testReadWhileWritingWaits" classname="edu.gmu.cs475.test.P2ReplicationTests" time="15.456">
+    <failure message="Expected setValue called with testReadWhileWritingWaits-key-1,testReadWhileWritingWaits-value-1,localhost:63602, but no call found" type="java.lang.AssertionError">java.lang.AssertionError: Expected setValue called with testReadWhileWritingWaits-key-1,testReadWhileWritingWaits-value-1,localhost:63602, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testReadWhileWritingWaits(P2ReplicationTests.java:409)
+</failure>
+  </testcase>
+  <testcase name="testCanWriteDifferentKeysAtOnce" classname="edu.gmu.cs475.test.P2ReplicationTests" time="15.212">
+    <failure message="Expected setValue called with testCanWriteDifferentKeysAtOnce-key-1,testCanWriteDifferentKeysAtOnce-value-1,localhost:63638, but no call found" type="java.lang.AssertionError">java.lang.AssertionError: Expected setValue called with testCanWriteDifferentKeysAtOnce-key-1,testCanWriteDifferentKeysAtOnce-value-1,localhost:63638, but no call found
+	at edu.gmu.cs475.test.P2ReplicationTests.testCanWriteDifferentKeysAtOnce(P2ReplicationTests.java:239)
+</failure>
+  </testcase>
+  <testcase name="testWriteOneClientReadAnother" classname="edu.gmu.cs475.test.P2ReplicationTests" time="15.214">
+    <failure message="expected:&lt;testWriteOneClientReadAnother-value-1&gt; but was:&lt;null&gt;" type="java.lang.AssertionError"><![CDATA[java.lang.AssertionError: expected:<testWriteOneClientReadAnother-value-1> but was:<null>
+	at edu.gmu.cs475.test.P2ReplicationTests.testWriteOneClientReadAnother(P2ReplicationTests.java:72)
+]]></failure>
+  </testcase>
+</testsuite>
