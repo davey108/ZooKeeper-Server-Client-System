@@ -12,12 +12,19 @@ import org.apache.zookeeper.CreateMode;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class KVStore extends AbstractKVStore {
-	ConcurrentHashMap<String,ConcurrentHashMap<Integer,PersistentNode>> memberships;
+	ConcurrentHashMap<String,String> keyValueMap;
+	// map key to the clients who has the key
+	ConcurrentHashMap<String,ArrayList<String>> keyNodeMap;
+	// map a key to a lock, assume only the leader can use this
+	ConcurrentHashMap<String,ReentrantReadWriteLock> keyLockMap;
 	LeaderLatch applier;
 	TreeCache members;
+	boolean isLeader;
 	/*
 	Do not change these constructors.
 	Any code that you need to run when the client starts should go in initClient.
@@ -44,9 +51,9 @@ public class KVStore extends AbstractKVStore {
 	 * @param localClientHostname Your client's hostname, which other clients will use to contact you
 	 * @param localClientPort     Your client's port number, which other clients will use to contact you
 	 */
+	@SuppressWarnings("resource")
 	@Override
-	public void initClient(String localClientHostname, int localClientPort) {		
-		memberships = new ConcurrentHashMap<String,ConcurrentHashMap<Integer,PersistentNode>>();
+	public void initClient(String localClientHostname, int localClientPort) {
 		// getLocalConnectString() will return string concat of localClientHostname + localClientPort
 		PersistentNode znode = new PersistentNode(zk, CreateMode.EPHEMERAL, false, 
 				ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString(), new byte[0]);
@@ -56,62 +63,55 @@ public class KVStore extends AbstractKVStore {
 		applier.addListener(new LeaderLatchListener(){
 			@Override
 			public void isLeader() {
-				System.out.println(applier.getId() + " " + "is the new leader");				
+				keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
+				keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
+				isLeader = true;
+				
 			}
-
 			@Override
 			public void notLeader() {
-				System.out.println(applier.getId() + " " + "is not a leader");
+				isLeader = false;
 				
 			}
 		});
-		// if the host name is empty
-		if(memberships.get(localClientHostname) == null){
-			memberships.put(localClientHostname, new ConcurrentHashMap<Integer,PersistentNode>());
-			// set up a tree to watch this path only if it does not exist yet
-			// so it only initialize the tree once
-			// is it correct that we are making a treecache at specific path? Or just the general
-			// ZK_MEMBERSHIP_NODE since that hold all the nodes?
-			members = new TreeCache(zk,ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString());
-			// adding a listener for changes in the treecache
-			// temporary boiler plate
-			TreeCacheListener instanceListener = new TreeCacheListener(){
-				@Override
-				public void childEvent(CuratorFramework zk, TreeCacheEvent event) throws Exception {
-					switch(event.getType()){
-						case CONNECTION_LOST:
-							System.out.println("Connection lost from this instance");
-						break;
-						case CONNECTION_RECONNECTED:
-							System.out.println("Connection has been restored from this instance");
-						break;
-						case CONNECTION_SUSPENDED:
-							System.out.println("Connection has been suspended");
-						break;
-						case INITIALIZED:
-							System.out.println("Connection is initialized from instance: " + getLocalConnectString());
-						break;
-						case NODE_ADDED:
-							System.out.println("A node has been added from this instance: " + getLocalConnectString());
-						break;
-						case NODE_REMOVED:
-							System.out.println("A node has been removed from this instance: " + getLocalConnectString());
-						break;
-						case NODE_UPDATED:
-							System.out.println("This instance node value has been updated to: " + znode.getData());
-						break;
-						default:
-							// nothing :(
-						break;
-					}
-					
+		keyValueMap = new ConcurrentHashMap<String,String>();
+		members = new TreeCache(zk,ZK_MEMBERSHIP_NODE);
+		// adding a listener for changes in the treecache
+		// temporary boiler plate
+		TreeCacheListener instanceListener = new TreeCacheListener(){
+			@Override
+			public void childEvent(CuratorFramework zk, TreeCacheEvent event) throws Exception {
+				switch(event.getType()){
+					case CONNECTION_LOST:
+						System.out.println("Connection lost from this instance");
+					break;
+					case CONNECTION_RECONNECTED:
+						System.out.println("Connection has been restored from this instance");
+					break;
+					case CONNECTION_SUSPENDED:
+						System.out.println("Connection has been suspended");
+					break;
+					case INITIALIZED:
+						System.out.println("Connection is initialized from instance: " + getLocalConnectString() + event.getData());
+					break;
+					case NODE_ADDED:
+						System.out.println("A node has been added from this instance: " + getLocalConnectString());
+					break;
+					case NODE_REMOVED:
+						System.out.println("A node has been removed from this instance: " + getLocalConnectString());
+					break;
+					case NODE_UPDATED:
+						System.out.println("This instance node value has been updated to: " + znode.getData());
+					break;
+					default:
+						// nothing :(
+					break;
 				}
 				
-			};
-			members.getListenable().addListener(instanceListener);
+			}
 			
-		}
-		memberships.get(localClientHostname).put(localClientPort, znode);
+		};
+		members.getListenable().addListener(instanceListener);			
 		try {
 			members.start();
 			applier.start();
@@ -129,7 +129,24 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public String getValue(String key) throws IOException {
-		return null;
+		if(this.keyValueMap.contains(key)){
+			return this.keyValueMap.get(key);
+		}
+		// contact leader if doesn't have
+		else{
+			String value = null;
+			try {
+				value = connectToKVStore(applier.getLeader().getId()).getValue(key,this.getLocalConnectString());
+				// attempts to update the cache
+				if(value != null)
+					this.keyValueMap.put(key, value);				
+			}
+			// not sure what to do here...
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+			return value;
+		}
 	}
 
 	/**
@@ -141,7 +158,13 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public void setValue(String key, String value) throws IOException {
-
+		try {
+			connectToKVStore(applier.getLeader().getId()).setValue(key, value, this.getLocalConnectString());
+			this.keyValueMap.put(key, value);
+		} catch (Exception e) {
+			throw new IOException();
+		}
+		
 	}
 
 	/**
@@ -157,7 +180,25 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public String getValue(String key, String fromID) throws RemoteException {
-		return null;
+		String value = null;
+		if(!this.keyLockMap.contains(key)){
+			keyLockMap.put(key, new ReentrantReadWriteLock());
+		}
+		keyLockMap.get(key).readLock().lock();
+		try{
+			if(this.keyValueMap.contains(key)){
+				value = this.keyValueMap.get(key);
+				// update cache for such client that it has the value of this key
+				if(this.keyNodeMap.get(key) == null){
+					this.keyNodeMap.put(key, new ArrayList<String>());
+				}
+				this.keyNodeMap.get(key).add(fromID);
+			}
+		}
+		finally{
+			keyLockMap.get(key).readLock().unlock();
+		}
+		return value;
 	}
 
 	/**
@@ -173,7 +214,28 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public void setValue(String key, String value, String fromID) {
-
+		// if the key doesn't exist, make it exist and install a lock for it
+		if(!keyLockMap.contains(key)){
+			keyLockMap.put(key, new ReentrantReadWriteLock());
+		}
+		// now put a lock on that key
+		keyLockMap.get(key).writeLock().lock();
+		try{
+			// invalidate all clients
+			invalidateKey(key);
+			// clear the leader's cache of client who has this key
+			keyNodeMap.put(key,null);
+			keyValueMap.put(key, value);
+			// reenter the client cached
+			keyNodeMap.put(key, new ArrayList<String>());
+			keyNodeMap.get(key).add(fromID);			
+			
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		finally{
+			keyLockMap.get(key).writeLock().unlock();
+		}
 	}
 
 	/**
@@ -187,7 +249,7 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public void invalidateKey(String key) throws RemoteException {
-
+		
 	}
 
 	/**
