@@ -12,6 +12,7 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.zookeeper.CreateMode;
 
 import java.io.IOException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Map;
@@ -223,8 +224,18 @@ public class KVStore extends AbstractKVStore {
 		// now put a lock on that key
 		keyLockMap.get(key).writeLock().lock();
 		try{
-			// invalidate all clients
-			invalidateKey(key);
+			Map<String,ChildData> followers = this.members.getCurrentChildren(ZK_MEMBERSHIP_NODE);
+			// check which node is connected to key that is in still alive followers
+			// if the list of client with that key cached exist and isn't empty
+			if(keyNodeMap.get(key) != null && keyNodeMap.get(key).size() != 0){
+				ArrayList<String> clientsKey = keyNodeMap.get(key);
+				for(String client : clientsKey){
+					// if the followers contains the client cached, then access the client and remove cache
+					if(followers.containsKey(client)){
+						connectToKVStore(client).invalidateKey(key);
+					}
+				}
+			}
 			// clear the leader's cache of client who has this key
 			keyNodeMap.put(key,null);
 			keyValueMap.put(key, value);
@@ -232,7 +243,7 @@ public class KVStore extends AbstractKVStore {
 			keyNodeMap.put(key, new ArrayList<String>());
 			keyNodeMap.get(key).add(fromID);			
 			
-		} catch (RemoteException e) {
+		} catch (RemoteException | NotBoundException e) {
 			e.printStackTrace();
 		}
 		finally{
@@ -251,21 +262,8 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public void invalidateKey(String key) throws RemoteException {
-		// see first if this node is still leader when this operation happens
-		if(isLeader == true){
-			Map<String,ChildData> followers = this.members.getCurrentChildren(ZK_MEMBERSHIP_NODE);
-			// check which node is connected to key that is in still alive followers
-			// if the list of client with that key cached exist and isn't empty
-			if(keyNodeMap.get(key) != null && keyNodeMap.get(key).size() != 0){
-				ArrayList<String> clientsKey = keyNodeMap.get(key);
-				for(String clients : clientsKey){
-					// if the followers contains the client cached, then access the client and remove cache
-					if(followers.containsKey(clients)){
-						
-					}
-				}
-			}
-		}
+		// assume that the node already has the key so we just remove it
+		this.keyValueMap.remove(key);
 	}
 
 	/**
