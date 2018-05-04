@@ -167,7 +167,7 @@ public class KVStore extends AbstractKVStore {
 	public String getValue(String key, String fromID) throws RemoteException {
 		String value = null;
 		if(!this.keyLockMap.containsKey(key)){
-			keyLockMap.put(key, new ReentrantReadWriteLock());
+			keyLockMap.put(key, new ReentrantReadWriteLock(true));
 		}
 		keyLockMap.get(key).readLock().lock();
 		try{
@@ -207,7 +207,7 @@ public class KVStore extends AbstractKVStore {
 	public void setValue(String key, String value, String fromID) {
 		// if the key doesn't exist, make it exist and install a lock for it
 		if(!keyLockMap.containsKey(key)){
-			keyLockMap.put(key, new ReentrantReadWriteLock());
+			keyLockMap.put(key, new ReentrantReadWriteLock(true));
 		}
 		// now put a lock on that key
 		keyLockMap.get(key).writeLock().lock();
@@ -279,7 +279,23 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	protected void _cleanup() {
-
+		// close leader latch
+		try {
+			applier.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		// close treecache
+		members.close();
+		// deleting the node from zookeeper
+		try {
+			// check first if node still exist...not sure if this is right
+			if(zk.checkExists().forPath(ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString()) != null){
+				zk.delete().guaranteed().deletingChildrenIfNeeded().forPath(ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
 
