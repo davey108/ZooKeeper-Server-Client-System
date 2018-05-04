@@ -25,6 +25,8 @@ public class KVStore extends AbstractKVStore {
 	ConcurrentHashMap<String,ReentrantReadWriteLock> keyLockMap;
 	LeaderLatch applier;
 	TreeCache members;
+	// debug flag. DELETE AFTER
+	boolean debug = false;
 	/*
 	Do not change these constructors.
 	Any code that you need to run when the client starts should go in initClient.
@@ -69,17 +71,20 @@ public class KVStore extends AbstractKVStore {
 			members.start();
 			applier.start();
 		} catch (Exception e) {
-			System.out.println("Something isn't started...");
 			e.printStackTrace();
 		}
 		applier.addListener(new LeaderLatchListener(){
 			@Override
 			public void isLeader() {
-				System.out.println(getLocalConnectString() + " is now leader");
+				if(debug){
+					System.out.println(getLocalConnectString() + " is now leader");
+				}
 			}
 			@Override
 			public void notLeader() {
-				System.out.println(getLocalConnectString() + " is now NOT leader");
+				if(debug){
+					System.out.println(getLocalConnectString() + " is now NOT leader");
+				}
 			}
 		});
 	}
@@ -93,27 +98,33 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public String getValue(String key) throws IOException {
-		System.out.println(keyValueMap + " Key: " + key);
-		System.out.println(keyValueMap.containsKey(key));
+		if(debug){
+			System.out.println(keyValueMap + " Key: " + key);
+			System.out.println(keyValueMap.containsKey(key));
+		}
 		if(keyValueMap.containsKey(key)){
-			System.out.println("Contains the key!");
+			if(debug){
+				System.out.println("Contains the key!");
+			}
 			return keyValueMap.get(key);
 		}
 		// contact leader if doesn't have
 		else{
 			String value = null;
 			try {
-				String lid = applier.getLeader().getId();
-				System.out.println(lid);
-				value = connectToKVStore(lid).getValue(key,this.getLocalConnectString());
+				value = connectToKVStore(applier.getLeader().getId()).getValue(key,this.getLocalConnectString());
 				// attempts to update the cache
-				System.out.println("Value from leader: " + value);
+				if(debug){
+					System.out.println("Value from leader: " + value);
+				}
 				if(value != null)
 					keyValueMap.put(key, value);				
 			}
 			// not sure what to do here...
 			catch (Exception e) {
-				System.out.println("Exception in getValue of followers");
+				if(debug){
+					System.out.println("Exception in getValue of followers");
+				}
 				e.printStackTrace();
 			}
 			return value;
@@ -132,9 +143,8 @@ public class KVStore extends AbstractKVStore {
 		try {
 			connectToKVStore(applier.getLeader().getId()).setValue(key, value, this.getLocalConnectString());
 		} catch (NotBoundException e) {
-			System.out.println("NOT Bound");
+			e.printStackTrace();
 		} catch (Exception e) {
-			System.out.println("Exception in setValue in client");
 			e.printStackTrace();
 		}
 		this.keyValueMap.put(key, value);
@@ -171,12 +181,14 @@ public class KVStore extends AbstractKVStore {
 			}
 		}
 		catch(Exception e){
-			System.out.println("Exception in getValue");
+			e.printStackTrace();
 		}
 		finally{
 			keyLockMap.get(key).readLock().unlock();
 		}
-		System.out.println("value from leader: " + value);
+		if(debug){
+			System.out.println("value from leader: " + value);
+		}
 		return value;
 	}
 
@@ -213,15 +225,21 @@ public class KVStore extends AbstractKVStore {
 				}
 			}
 			// clear the leader's cache of client who has this key
-			System.out.println("Leader is about to set the key: " + key + " to value: " + value);
+			if(debug){
+				System.out.println("Leader is about to set the key: " + key + " to value: " + value);
+			}
 			keyValueMap.put(key, value);
-			System.out.println(keyValueMap.get(key));
+			if(debug){
+				System.out.println(keyValueMap.get(key));
+			}
 			// reenter the client cached
 			keyNodeMap.put(key, new ArrayList<String>());
 			keyNodeMap.get(key).add(fromID);			
 			
 		} catch (RemoteException | NotBoundException e) {
-			System.out.println("Exception in set value");
+			if(debug){
+				System.out.println("Exception in set value");
+			}
 			e.printStackTrace();
 		}
 		finally{
