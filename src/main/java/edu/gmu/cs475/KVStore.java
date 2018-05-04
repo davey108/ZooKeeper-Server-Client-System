@@ -3,8 +3,6 @@ package edu.gmu.cs475;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.TreeCache;
-import org.apache.curator.framework.recipes.cache.TreeCacheEvent;
-import org.apache.curator.framework.recipes.cache.TreeCacheListener;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
@@ -27,7 +25,6 @@ public class KVStore extends AbstractKVStore {
 	ConcurrentHashMap<String,ReentrantReadWriteLock> keyLockMap;
 	LeaderLatch applier;
 	TreeCache members;
-	boolean isLeader;
 	/*
 	Do not change these constructors.
 	Any code that you need to run when the client starts should go in initClient.
@@ -61,66 +58,30 @@ public class KVStore extends AbstractKVStore {
 		PersistentNode znode = new PersistentNode(zk, CreateMode.EPHEMERAL, false, 
 				ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString(), new byte[0]);
 		znode.start();
+		// putting it out here for test cases, but only leader should use these...
+		keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
+		keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
 		// create a leader latch for electing leader
 		applier = new LeaderLatch(zk, ZK_LEADER_NODE, getLocalConnectString());
-		applier.addListener(new LeaderLatchListener(){
-			@Override
-			public void isLeader() {
-				keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
-				keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
-				isLeader = true;
-				
-			}
-			@Override
-			public void notLeader() {
-				isLeader = false;
-				
-			}
-		});
 		keyValueMap = new ConcurrentHashMap<String,String>();
-		members = new TreeCache(zk,ZK_MEMBERSHIP_NODE);
-		// adding a listener for changes in the treecache
-		// temporary boiler plate
-		TreeCacheListener instanceListener = new TreeCacheListener(){
-			@Override
-			public void childEvent(CuratorFramework zk, TreeCacheEvent event) throws Exception {
-				switch(event.getType()){
-					case CONNECTION_LOST:
-						System.out.println("Connection lost from this instance");
-					break;
-					case CONNECTION_RECONNECTED:
-						System.out.println("Connection has been restored from this instance");
-					break;
-					case CONNECTION_SUSPENDED:
-						System.out.println("Connection has been suspended");
-					break;
-					case INITIALIZED:
-						System.out.println("Connection is initialized from instance: " + getLocalConnectString() + event.getData());
-					break;
-					case NODE_ADDED:
-						System.out.println("A node has been added from this instance: " + getLocalConnectString());
-					break;
-					case NODE_REMOVED:
-						System.out.println("A node has been removed from this instance: " + getLocalConnectString());
-					break;
-					case NODE_UPDATED:
-						System.out.println("This instance node value has been updated to: " + znode.getData());
-					break;
-					default:
-						// nothing :(
-					break;
-				}
-				
-			}
-			
-		};
-		members.getListenable().addListener(instanceListener);			
+		members = new TreeCache(zk,ZK_MEMBERSHIP_NODE);			
 		try {
 			members.start();
 			applier.start();
 		} catch (Exception e) {
+			System.out.println("Something isn't started...");
 			e.printStackTrace();
 		}
+		applier.addListener(new LeaderLatchListener(){
+			@Override
+			public void isLeader() {
+				System.out.println(getLocalConnectString() + " is now leader");
+			}
+			@Override
+			public void notLeader() {
+				System.out.println(getLocalConnectString() + " is now NOT leader");
+			}
+		});
 	}
 
 	/**
@@ -132,20 +93,27 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public String getValue(String key) throws IOException {
-		if(this.keyValueMap.contains(key)){
-			return this.keyValueMap.get(key);
+		System.out.println(keyValueMap + " Key: " + key);
+		System.out.println(keyValueMap.containsKey(key));
+		if(keyValueMap.containsKey(key)){
+			System.out.println("Contains the key!");
+			return keyValueMap.get(key);
 		}
 		// contact leader if doesn't have
 		else{
 			String value = null;
 			try {
-				value = connectToKVStore(applier.getLeader().getId()).getValue(key,this.getLocalConnectString());
+				String lid = applier.getLeader().getId();
+				System.out.println(lid);
+				value = connectToKVStore(lid).getValue(key,this.getLocalConnectString());
 				// attempts to update the cache
+				System.out.println("Value from leader: " + value);
 				if(value != null)
-					this.keyValueMap.put(key, value);				
+					keyValueMap.put(key, value);				
 			}
 			// not sure what to do here...
 			catch (Exception e) {
+				System.out.println("Exception in getValue of followers");
 				e.printStackTrace();
 			}
 			return value;
@@ -160,13 +128,17 @@ public class KVStore extends AbstractKVStore {
 	 * @throws IOException if this client or the leader is disconnected from ZooKeeper
 	 */
 	@Override
-	public void setValue(String key, String value) throws IOException {
+	public void setValue(String key, String value) throws IOException {		
 		try {
 			connectToKVStore(applier.getLeader().getId()).setValue(key, value, this.getLocalConnectString());
-			this.keyValueMap.put(key, value);
+		} catch (NotBoundException e) {
+			System.out.println("NOT Bound");
 		} catch (Exception e) {
-			throw new IOException();
+			System.out.println("Exception in setValue in client");
+			e.printStackTrace();
 		}
+		this.keyValueMap.put(key, value);
+	
 		
 	}
 
@@ -184,12 +156,12 @@ public class KVStore extends AbstractKVStore {
 	@Override
 	public String getValue(String key, String fromID) throws RemoteException {
 		String value = null;
-		if(!this.keyLockMap.contains(key)){
+		if(!this.keyLockMap.containsKey(key)){
 			keyLockMap.put(key, new ReentrantReadWriteLock());
 		}
 		keyLockMap.get(key).readLock().lock();
 		try{
-			if(this.keyValueMap.contains(key)){
+			if(this.keyValueMap.containsKey(key)){
 				value = this.keyValueMap.get(key);
 				// update cache for such client that it has the value of this key
 				if(this.keyNodeMap.get(key) == null){
@@ -198,9 +170,13 @@ public class KVStore extends AbstractKVStore {
 				this.keyNodeMap.get(key).add(fromID);
 			}
 		}
+		catch(Exception e){
+			System.out.println("Exception in getValue");
+		}
 		finally{
 			keyLockMap.get(key).readLock().unlock();
 		}
+		System.out.println("value from leader: " + value);
 		return value;
 	}
 
@@ -218,7 +194,7 @@ public class KVStore extends AbstractKVStore {
 	@Override
 	public void setValue(String key, String value, String fromID) {
 		// if the key doesn't exist, make it exist and install a lock for it
-		if(!keyLockMap.contains(key)){
+		if(!keyLockMap.containsKey(key)){
 			keyLockMap.put(key, new ReentrantReadWriteLock());
 		}
 		// now put a lock on that key
@@ -237,13 +213,15 @@ public class KVStore extends AbstractKVStore {
 				}
 			}
 			// clear the leader's cache of client who has this key
-			keyNodeMap.put(key,null);
+			System.out.println("Leader is about to set the key: " + key + " to value: " + value);
 			keyValueMap.put(key, value);
+			System.out.println(keyValueMap.get(key));
 			// reenter the client cached
 			keyNodeMap.put(key, new ArrayList<String>());
 			keyNodeMap.get(key).add(fromID);			
 			
 		} catch (RemoteException | NotBoundException e) {
+			System.out.println("Exception in set value");
 			e.printStackTrace();
 		}
 		finally{
