@@ -1,6 +1,7 @@
 package edu.gmu.cs475;
 
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.TreeCache;
 import org.apache.curator.framework.recipes.cache.TreeCacheEvent;
 import org.apache.curator.framework.recipes.cache.TreeCacheListener;
@@ -13,6 +14,7 @@ import org.apache.zookeeper.CreateMode;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -249,7 +251,21 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public void invalidateKey(String key) throws RemoteException {
-		
+		// see first if this node is still leader when this operation happens
+		if(isLeader == true){
+			Map<String,ChildData> followers = this.members.getCurrentChildren(ZK_MEMBERSHIP_NODE);
+			// check which node is connected to key that is in still alive followers
+			// if the list of client with that key cached exist and isn't empty
+			if(keyNodeMap.get(key) != null && keyNodeMap.get(key).size() != 0){
+				ArrayList<String> clientsKey = keyNodeMap.get(key);
+				for(String clients : clientsKey){
+					// if the followers contains the client cached, then access the client and remove cache
+					if(followers.containsKey(clients)){
+						
+					}
+				}
+			}
+		}
 	}
 
 	/**
