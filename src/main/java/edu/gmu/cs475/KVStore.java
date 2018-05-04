@@ -60,12 +60,12 @@ public class KVStore extends AbstractKVStore {
 		PersistentNode znode = new PersistentNode(zk, CreateMode.EPHEMERAL, false, 
 				ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString(), new byte[0]);
 		znode.start();
-		// putting it out here for test cases, but only leader should use these...
-		keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
-		keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
 		// create a leader latch for electing leader
 		applier = new LeaderLatch(zk, ZK_LEADER_NODE, getLocalConnectString());
 		keyValueMap = new ConcurrentHashMap<String,String>();
+		// putting it out here for test cases, but only leader should use these...
+		keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
+		keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
 		members = new TreeCache(zk,ZK_MEMBERSHIP_NODE);			
 		try {
 			members.start();
@@ -288,14 +288,14 @@ public class KVStore extends AbstractKVStore {
 		// close treecache
 		members.close();
 		// deleting the node from zookeeper
-		try {
+		/*try {
 			// check first if node still exist...not sure if this is right
 			if(zk.checkExists().forPath(ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString()) != null){
 				zk.delete().guaranteed().deletingChildrenIfNeeded().forPath(ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString());
-			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
+		}*/
 	}
 }
 
