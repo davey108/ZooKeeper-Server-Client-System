@@ -3,6 +3,8 @@ package edu.gmu.cs475;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.TreeCache;
+import org.apache.curator.framework.recipes.cache.TreeCacheEvent;
+import org.apache.curator.framework.recipes.cache.TreeCacheListener;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
@@ -25,6 +27,10 @@ public class KVStore extends AbstractKVStore {
 	ConcurrentHashMap<String,ReentrantReadWriteLock> keyLockMap;
 	LeaderLatch applier;
 	TreeCache members;
+	// keeping track of its leadership (BEFORE any bad state may happen)
+	boolean isLeader;
+	// keeping track of who's the current leader
+	String currentLeader;
 	// debug flag. DELETE AFTER
 	boolean debug = false;
 	/*
@@ -76,16 +82,66 @@ public class KVStore extends AbstractKVStore {
 		applier.addListener(new LeaderLatchListener(){
 			@Override
 			public void isLeader() {
-				if(debug){
+				isLeader = true;
+				currentLeader = applier.getId();
+				if(debug){					
 					System.out.println(getLocalConnectString() + " is now leader");
 				}
 			}
 			@Override
 			public void notLeader() {
+				try {
+					currentLeader = applier.getLeader().getId();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				isLeader = false;
 				if(debug){
 					System.out.println(getLocalConnectString() + " is now NOT leader");
 				}
 			}
+		});
+		// tree cache listener for if something in the tree changed
+		members.getListenable().addListener(new TreeCacheListener(){
+			@Override
+			public void childEvent(CuratorFramework client, TreeCacheEvent event) throws Exception {
+				switch(event.getType()){
+				case NODE_ADDED:
+					System.out.println("Node added");
+					String curldr = applier.getLeader().getId();
+					// if our leader has changed, wipe the cache
+					if(!curldr.equals(currentLeader)){
+						keyValueMap = new ConcurrentHashMap<String,String>();
+						keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
+						keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
+					}
+					break;
+				case NODE_REMOVED:
+					System.out.println("Node removed");
+					String leader = applier.getLeader().getId();
+					// if our leader has changed, wipe the cache
+					if(!leader.equals(currentLeader)){
+						keyValueMap = new ConcurrentHashMap<String,String>();
+						keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
+						keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
+					}
+					break;
+				case CONNECTION_LOST:
+					break;
+				case CONNECTION_RECONNECTED:
+					break;
+				case CONNECTION_SUSPENDED:
+					break;
+				case INITIALIZED:
+					break;
+				case NODE_UPDATED:
+					break;
+				default:
+					break;
+				}
+				
+			}
+			
 		});
 	}
 
@@ -99,8 +155,10 @@ public class KVStore extends AbstractKVStore {
 	@Override
 	public String getValue(String key) throws IOException {
 		if(debug){
-			System.out.println(keyValueMap + " Key: " + key);
-			System.out.println(keyValueMap.containsKey(key));
+			String k = "testWriteReadOneKVServer-key-1";
+			System.out.println("Client Map: " + keyValueMap);
+			System.out.println("Using contains method to see if key in: " + keyValueMap.contains(k));
+			System.out.println("Using containsKey to see if key in: " + keyValueMap.containsKey(k));
 		}
 		if(keyValueMap.containsKey(key)){
 			if(debug){
@@ -166,6 +224,10 @@ public class KVStore extends AbstractKVStore {
 	@Override
 	public String getValue(String key, String fromID) throws RemoteException {
 		String value = null;
+		if(debug){
+			System.out.println("The map: " + keyValueMap);
+			System.out.println("Result for key: " + key + " in table: " + keyValueMap.contains(key));
+		}
 		if(!this.keyLockMap.containsKey(key)){
 			keyLockMap.put(key, new ReentrantReadWriteLock(true));
 		}
@@ -270,7 +332,44 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public void stateChanged(CuratorFramework client, ConnectionState newState){
-		
+		// we will use tree cache to see who else is in the path
+		switch(newState)
+		{
+		// does nothing in connected
+		case CONNECTED:
+		{
+			System.out.println("Node connected");
+			break;
+		}
+		case RECONNECTED:
+		{
+			// if reconnected and is not the only one, we must flush data
+			if(members.getCurrentChildren(ZK_MEMBERSHIP_NODE).size() > 1){
+				this.keyValueMap = new ConcurrentHashMap<String,String>();
+				// if it was previously a leader, then clear this part of cache data too
+				if(this.keyNodeMap.size() != 0){
+					this.keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
+				}
+				if(this.keyLockMap.size() != 0){
+					this.keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
+				}
+			}
+			// else case is already accounted for with the current data this node has...
+			System.out.println("Re-connected");
+			
+			break;
+		}
+		case LOST:
+		{
+			break;
+		}
+		case SUSPENDED:
+		{
+			break;
+		}
+		case READ_ONLY:
+			break;
+		}
 	}
 
 	/**
