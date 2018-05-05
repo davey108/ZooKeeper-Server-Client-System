@@ -15,7 +15,6 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class KVStore extends AbstractKVStore {
@@ -65,6 +64,7 @@ public class KVStore extends AbstractKVStore {
 		znode.start();
 		// create a leader latch for electing leader
 		applier = new LeaderLatch(zk, ZK_LEADER_NODE, getLocalConnectString());
+		members = new TreeCache(zk,ZK_MEMBERSHIP_NODE);
 		// initialize all structures for storing datas
 		keyValueMap = new ConcurrentHashMap<String,String>();
 		// the two data structure below here should only EVER be use by the leader
@@ -286,18 +286,19 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public void stateChanged(CuratorFramework client, ConnectionState newState){
-		// we will use tree cache to see who else is in the path
+		// see if the node is still connected to zk
+		isConnected = newState.isConnected();
 		switch(newState)
 		{
 		// does nothing in connected
 		case CONNECTED:
 		{
-			isConnected = true;
 			System.out.println("Node connected");
 			break;
 		}
 		case RECONNECTED:
 		{
+			System.out.println("Node reconnected");
 			// if this node came back online and it isn't the leader, then flush its cache
 			try {
 				if(!this.applier.getLeader().getId().equals(applier.getId())){
@@ -308,29 +309,22 @@ public class KVStore extends AbstractKVStore {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-			}
-			isConnected = true;
-			System.out.println("Node reconnected");			
+			}			
 			break;
 		}
 		case SUSPENDED:
 		{
-			// wait for 10 seconds until we get connected again, if not, let it go to suspended
-			try {
-				boolean connected = zk.blockUntilConnected(10000, TimeUnit.MILLISECONDS);
-				if(connected){
-					break;
-				}
-				else{
-					isConnected = false;
-				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			System.out.println("Node suspended");
+			// let it go to lost...			
 		}
 		case LOST:
 		{
-			isConnected = false;			
+			System.out.println("Node Lost");
+			// erase all states since node is lost
+			keyValueMap = null;
+			keyNodeMap = null;
+			keyLockMap = null;
+			break;
 		}
 		case READ_ONLY:
 			System.out.println("Read-only...weird");
