@@ -3,8 +3,6 @@ package edu.gmu.cs475;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.TreeCache;
-import org.apache.curator.framework.recipes.cache.TreeCacheEvent;
-import org.apache.curator.framework.recipes.cache.TreeCacheListener;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
@@ -17,6 +15,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class KVStore extends AbstractKVStore {
@@ -27,12 +26,10 @@ public class KVStore extends AbstractKVStore {
 	ConcurrentHashMap<String,ReentrantReadWriteLock> keyLockMap;
 	LeaderLatch applier;
 	TreeCache members;
-	// keeping track of its leadership (BEFORE any bad state may happen)
-	boolean isLeader;
-	// keeping track of who's the current leader
-	String currentLeader;
 	// debug flag. DELETE AFTER
 	boolean debug = false;
+	// see if this node is still connect to zk
+	boolean isConnected;
 	/*
 	Do not change these constructors.
 	Any code that you need to run when the client starts should go in initClient.
@@ -68,11 +65,11 @@ public class KVStore extends AbstractKVStore {
 		znode.start();
 		// create a leader latch for electing leader
 		applier = new LeaderLatch(zk, ZK_LEADER_NODE, getLocalConnectString());
+		// initialize all structures for storing datas
 		keyValueMap = new ConcurrentHashMap<String,String>();
-		// putting it out here for test cases, but only leader should use these...
+		// the two data structure below here should only EVER be use by the leader
 		keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
-		keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
-		members = new TreeCache(zk,ZK_MEMBERSHIP_NODE);			
+		keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();	
 		try {
 			members.start();
 			applier.start();
@@ -82,66 +79,16 @@ public class KVStore extends AbstractKVStore {
 		applier.addListener(new LeaderLatchListener(){
 			@Override
 			public void isLeader() {
-				isLeader = true;
-				currentLeader = applier.getId();
 				if(debug){					
 					System.out.println(getLocalConnectString() + " is now leader");
 				}
 			}
 			@Override
 			public void notLeader() {
-				try {
-					currentLeader = applier.getLeader().getId();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				isLeader = false;
 				if(debug){
 					System.out.println(getLocalConnectString() + " is now NOT leader");
 				}
 			}
-		});
-		// tree cache listener for if something in the tree changed
-		members.getListenable().addListener(new TreeCacheListener(){
-			@Override
-			public void childEvent(CuratorFramework client, TreeCacheEvent event) throws Exception {
-				switch(event.getType()){
-				case NODE_ADDED:
-					System.out.println("Node added");
-					String curldr = applier.getLeader().getId();
-					// if our leader has changed, wipe the cache
-					if(!curldr.equals(currentLeader)){
-						keyValueMap = new ConcurrentHashMap<String,String>();
-						keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
-						keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
-					}
-					break;
-				case NODE_REMOVED:
-					System.out.println("Node removed");
-					String leader = applier.getLeader().getId();
-					// if our leader has changed, wipe the cache
-					if(!leader.equals(currentLeader)){
-						keyValueMap = new ConcurrentHashMap<String,String>();
-						keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
-						keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
-					}
-					break;
-				case CONNECTION_LOST:
-					break;
-				case CONNECTION_RECONNECTED:
-					break;
-				case CONNECTION_SUSPENDED:
-					break;
-				case INITIALIZED:
-					break;
-				case NODE_UPDATED:
-					break;
-				default:
-					break;
-				}
-				
-			}
-			
 		});
 	}
 
@@ -159,6 +106,10 @@ public class KVStore extends AbstractKVStore {
 			System.out.println("Client Map: " + keyValueMap);
 			System.out.println("Using contains method to see if key in: " + keyValueMap.contains(k));
 			System.out.println("Using containsKey to see if key in: " + keyValueMap.containsKey(k));
+		}
+		// if node isn't connected, throw IO
+		if(!isConnected){
+			throw new IOException();
 		}
 		if(keyValueMap.containsKey(key)){
 			if(debug){
@@ -183,7 +134,7 @@ public class KVStore extends AbstractKVStore {
 				if(debug){
 					System.out.println("Exception in getValue of followers");
 				}
-				e.printStackTrace();
+				throw new IOException();
 			}
 			return value;
 		}
@@ -197,13 +148,16 @@ public class KVStore extends AbstractKVStore {
 	 * @throws IOException if this client or the leader is disconnected from ZooKeeper
 	 */
 	@Override
-	public void setValue(String key, String value) throws IOException {		
+	public void setValue(String key, String value) throws IOException {	
+		if(!isConnected){
+			throw new IOException();
+		}
 		try {
 			connectToKVStore(applier.getLeader().getId()).setValue(key, value, this.getLocalConnectString());
 		} catch (NotBoundException e) {
-			e.printStackTrace();
+			throw new IOException();
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw new IOException();
 		}
 		this.keyValueMap.put(key, value);
 	
@@ -338,36 +292,48 @@ public class KVStore extends AbstractKVStore {
 		// does nothing in connected
 		case CONNECTED:
 		{
+			isConnected = true;
 			System.out.println("Node connected");
 			break;
 		}
 		case RECONNECTED:
 		{
-			// if reconnected and is not the only one, we must flush data
-			if(members.getCurrentChildren(ZK_MEMBERSHIP_NODE).size() > 1){
-				this.keyValueMap = new ConcurrentHashMap<String,String>();
-				// if it was previously a leader, then clear this part of cache data too
-				if(this.keyNodeMap.size() != 0){
-					this.keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
+			// if this node came back online and it isn't the leader, then flush its cache
+			try {
+				if(!this.applier.getLeader().getId().equals(applier.getId())){
+					keyValueMap = new ConcurrentHashMap<String,String>();
+					// the two data structure below here should only EVER be use by the leader
+					keyNodeMap = new ConcurrentHashMap<String,ArrayList<String>>();
+					keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
 				}
-				if(this.keyLockMap.size() != 0){
-					this.keyLockMap = new ConcurrentHashMap<String,ReentrantReadWriteLock>();
-				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			// else case is already accounted for with the current data this node has...
-			System.out.println("Re-connected");
-			
-			break;
-		}
-		case LOST:
-		{
+			isConnected = true;
+			System.out.println("Node reconnected");			
 			break;
 		}
 		case SUSPENDED:
 		{
-			break;
+			// wait for 10 seconds until we get connected again, if not, let it go to suspended
+			try {
+				boolean connected = zk.blockUntilConnected(10000, TimeUnit.MILLISECONDS);
+				if(connected){
+					break;
+				}
+				else{
+					isConnected = false;
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		case LOST:
+		{
+			isConnected = false;			
 		}
 		case READ_ONLY:
+			System.out.println("Read-only...weird");
 			break;
 		}
 	}
