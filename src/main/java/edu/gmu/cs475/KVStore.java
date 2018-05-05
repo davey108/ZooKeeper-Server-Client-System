@@ -347,17 +347,18 @@ public class KVStore extends AbstractKVStore {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		// close treecache
-		members.close();
+		
 		// deleting the node from zookeeper
 		/*try {
 			// check first if node still exist...not sure if this is right
 			if(zk.checkExists().forPath(ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString()) != null){
 				zk.delete().guaranteed().deletingChildrenIfNeeded().forPath(ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString());
-			
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}*/
+		// close treecache
+		members.close();
 	}
 }
 

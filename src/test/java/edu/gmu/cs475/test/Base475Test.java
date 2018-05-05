@@ -221,9 +221,8 @@ public class Base475Test {
 			Thread.sleep(WAIT_TIME);
 			try {
 				Participant curLeader = leadership.getLeader();
-				if (curLeader.getId().length() > 0){
+				if (curLeader.getId().length() > 0)
 					leaderID = curLeader.getId();
-				}
 			} catch (Exception ex) {
 			}
 			nTried++;

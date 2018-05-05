@@ -198,7 +198,6 @@ public class P2ReplicationTests extends Base475Test {
 		ok = true;
 		TestingClient c1 = newClient("Leader (C1)");
 		blockUntilLeader(c1);
-		//System.out.println("Unblocked...");
 		TestingClient c2 = newClient("Follower (C2)");
 		TestingClient c3 = newClient("Follower (C3)");
 		CountDownLatch latch = new CountDownLatch(4);
