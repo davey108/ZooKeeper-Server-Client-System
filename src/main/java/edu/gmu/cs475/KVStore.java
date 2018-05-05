@@ -296,12 +296,16 @@ public class KVStore extends AbstractKVStore {
 		// does nothing in connected
 		case CONNECTED:
 		{
-			System.out.println("Node connected");
+			if(debug){
+				System.out.println("Node connected");
+			}
 			break;
 		}
 		case RECONNECTED:
 		{
-			System.out.println("Node reconnected");
+			if(debug){
+				System.out.println("Node reconnected");
+			}
 			// if this node came back online and it isn't the leader, then flush its cache
 			try {
 				if(!this.applier.getLeader().getId().equals(applier.getId())){
@@ -317,11 +321,15 @@ public class KVStore extends AbstractKVStore {
 		}
 		case SUSPENDED:
 		{
-			System.out.println("Node suspended");	
+			if(debug){
+				System.out.println("Node suspended");	
+			}
 		}
 		case LOST:
 		{
-			System.out.println("Node Lost");
+			if(debug){
+				System.out.println("Node Lost");
+			}
 			// erase all states since node is lost
 			keyValueMap = null;
 			keyNodeMap = null;
@@ -330,7 +338,9 @@ public class KVStore extends AbstractKVStore {
 			break;
 		}
 		case READ_ONLY:
-			System.out.println("Read-only...weird");
+			if(debug){
+				System.out.println("Read-only...weird");
+			}
 			break;
 		}
 	}
