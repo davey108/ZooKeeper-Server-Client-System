@@ -315,7 +315,7 @@ public class KVStore extends AbstractKVStore {
 		case SUSPENDED:
 		{
 			System.out.println("Node suspended");
-			// let it go to lost...			
+			break;		
 		}
 		case LOST:
 		{
@@ -324,6 +324,7 @@ public class KVStore extends AbstractKVStore {
 			keyValueMap = null;
 			keyNodeMap = null;
 			keyLockMap = null;
+			client.close();
 			break;
 		}
 		case READ_ONLY:
