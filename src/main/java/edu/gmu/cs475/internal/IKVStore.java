@@ -1,5 +1,6 @@
 package edu.gmu.cs475.internal;
 
+import java.io.IOException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -34,7 +35,7 @@ public interface IKVStore extends Remote{
 	 *
 	 * DOES NOT throw any exceptions (the RemoteException is thrown by RMI if the connection fails)
 	 */
-	public void setValue(String key, String value, String fromID) throws RemoteException;
+	public void setValue(String key, String value, String fromID) throws RemoteException, IOException;
 
 	/**
 	 * Instruct a node to invalidate any cache of the specified key.

@@ -220,7 +220,10 @@ public class KVStore extends AbstractKVStore {
 	 * @param fromID The ID of the client making the request (as returned by AbstractKVStore.getLocalConnectString())
 	 */
 	@Override
-	public void setValue(String key, String value, String fromID) {
+	public void setValue(String key, String value, String fromID) throws IOException{		
+		if(!isConnected){
+			throw new IOException();
+		}
 		// if the key doesn't exist, make it exist and install a lock for it
 		if(!keyLockMap.containsKey(key)){
 			keyLockMap.put(key, new ReentrantReadWriteLock(true));
@@ -314,8 +317,7 @@ public class KVStore extends AbstractKVStore {
 		}
 		case SUSPENDED:
 		{
-			System.out.println("Node suspended");
-			break;		
+			System.out.println("Node suspended");	
 		}
 		case LOST:
 		{
@@ -324,7 +326,7 @@ public class KVStore extends AbstractKVStore {
 			keyValueMap = null;
 			keyNodeMap = null;
 			keyLockMap = null;
-			client.close();
+			//client.close();
 			break;
 		}
 		case READ_ONLY:

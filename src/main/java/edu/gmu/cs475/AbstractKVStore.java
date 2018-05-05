@@ -16,7 +16,6 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 
-@SuppressWarnings("unused")
 public abstract class AbstractKVStore implements IKVStore, ConnectionStateListener {
 
 	public final static String ZK_MEMBERSHIP_NODE = "/edu/gmu/cs475/membership";
