@@ -76,6 +76,7 @@ public class KVStore extends AbstractKVStore {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 		applier.addListener(new LeaderLatchListener(){
 			@Override
 			public void isLeader() {
@@ -101,19 +102,13 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	public String getValue(String key) throws IOException {
-		if(debug){
-			String k = "testWriteReadOneKVServer-key-1";
-			System.out.println("Client Map: " + keyValueMap);
-			System.out.println("Using contains method to see if key in: " + keyValueMap.contains(k));
-			System.out.println("Using containsKey to see if key in: " + keyValueMap.containsKey(k));
-		}
 		// if node isn't connected, throw IO
 		if(!isConnected){
 			throw new IOException();
 		}
 		if(keyValueMap.containsKey(key)){
 			if(debug){
-				System.out.println("Contains the key!");
+				System.out.println("Contains the key! " + key);
 			}
 			return keyValueMap.get(key);
 		}
@@ -331,10 +326,9 @@ public class KVStore extends AbstractKVStore {
 				System.out.println("Node Lost");
 			}
 			// erase all states since node is lost
-			keyValueMap = null;
-			keyNodeMap = null;
-			keyLockMap = null;
-			//client.close();
+			this.keyValueMap = null;
+			this.keyNodeMap = null;
+			this.keyLockMap = null;
 			break;
 		}
 		case READ_ONLY:
@@ -353,22 +347,13 @@ public class KVStore extends AbstractKVStore {
 	protected void _cleanup() {
 		// close leader latch
 		try {
-			applier.close();
+			this.applier.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		// deleting the node from zookeeper
-		/*try {
-			// check first if node still exist...not sure if this is right
-			if(zk.checkExists().forPath(ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString()) != null){
-				zk.delete().guaranteed().deletingChildrenIfNeeded().forPath(ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString());
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}*/
 		// close treecache
-		members.close();
+		this.members.close();		
+		
 	}
 }
 
