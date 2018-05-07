@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 
+@SuppressWarnings("unused")
 @ShellComponent
 public class Command {
 

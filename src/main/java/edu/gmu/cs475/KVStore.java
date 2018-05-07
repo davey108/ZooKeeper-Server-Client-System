@@ -29,6 +29,7 @@ public class KVStore extends AbstractKVStore {
 	boolean debug = false;
 	// see if this node is still connect to zk
 	boolean isConnected;
+	PersistentNode znode;
 	/*
 	Do not change these constructors.
 	Any code that you need to run when the client starts should go in initClient.
@@ -55,15 +56,14 @@ public class KVStore extends AbstractKVStore {
 	 * @param localClientHostname Your client's hostname, which other clients will use to contact you
 	 * @param localClientPort     Your client's port number, which other clients will use to contact you
 	 */
-	@SuppressWarnings("resource")
 	@Override
 	public void initClient(String localClientHostname, int localClientPort) {
 		// getLocalConnectString() will return string concat of localClientHostname + localClientPort
-		PersistentNode znode = new PersistentNode(zk, CreateMode.EPHEMERAL, false, 
+		znode = new PersistentNode(zk, CreateMode.EPHEMERAL, false, 
 				ZK_MEMBERSHIP_NODE + "/" + getLocalConnectString(), new byte[0]);
 		znode.start();
 		// create a leader latch for electing leader
-		applier = new LeaderLatch(zk, ZK_LEADER_NODE, getLocalConnectString());
+		applier = new LeaderLatch(zk, ZK_LEADER_NODE, getLocalConnectString(),LeaderLatch.CloseMode.NOTIFY_LEADER);
 		members = new TreeCache(zk,ZK_MEMBERSHIP_NODE);
 		// initialize all structures for storing datas
 		keyValueMap = new ConcurrentHashMap<String,String>();
@@ -345,14 +345,31 @@ public class KVStore extends AbstractKVStore {
 	 */
 	@Override
 	protected void _cleanup() {
-		// close leader latch
-		try {
-			this.applier.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if(isConnected){
+			// close leader latch
+			try {
+				if(this.applier.getState() == LeaderLatch.State.STARTED){
+					this.applier.close();	
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			// close treecache
+			try {
+				if(zk.checkExists().forPath(ZK_MEMBERSHIP_NODE) != null){
+					this.members.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			try {
+				znode.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			
+
 		}
-		// close treecache
-		this.members.close();		
 		
 	}
 }
