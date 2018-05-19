@@ -36,5 +36,4 @@ This project ultilize Apache ZooKeeper to set up a fault-tolerance servers and c
 
 ## Authors
 
-* **Jonathan Bell** - *Initial work* - [Website](http://www.jonbell.net/gmu-cs-475-spring-2018/final-project/)
-* **Khang Chau Vo** - *Logic and finalize implementation* - [Project](https://github.com/davey108/ZooKeeper-Server-Client-System)
+* **Khang Chau Vo** - *Logic and implementation* - [Project](https://github.com/davey108/ZooKeeper-Server-Client-System)
